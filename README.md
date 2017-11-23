@@ -7,7 +7,6 @@
 3. Load your first Express application
 4. Build an express route.
 5. Send a response to an HTTP request using Express
-6. 
 
 ## Javascript, Meet `HTTP` with Node
 
