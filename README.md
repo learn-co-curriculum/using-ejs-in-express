@@ -13,7 +13,7 @@
 
 Node introduced a module in the framework called `http`. This low-level module provides a way to turn a Javascript application into a web application. Instead of running a program and it exiting after the procedure terminates, a program that leverages `http` can create a server, an application that will stay on, listening for HTTP requests and providing http responses.
 
-**File: [simpleNodeServer.js]()**
+**File: [simpleNodeServer.js](https://github.com/learn-co-curriculum/intro-to-express-js/blob/master/simpleNodeServer.js)**
 ```js
 const http = require('http');
 
@@ -51,7 +51,7 @@ The issue with the native Node `http` object is that the server can receive one 
 
 If we wanted to support multiple URLs in our application and do different things for each request, we would have to build everything into that main function passed to `createServer`. It would get messy fast, lots of looking at the `req` and figuring out URLs and building an internal routing engine, sort of like a traffic cop saying "Oh, the person wants our "About Page" at `/about`, so call the `AboutPage()` function and pass the response. It'd look like this:
 
-**File: nodeRouting.js**
+**File: [nodeRouting.js](https://github.com/learn-co-curriculum/intro-to-express-js/blob/master/nodeRouting.js)**
 ```js
 const http = require('http');
 
@@ -92,7 +92,7 @@ The [Express.js](https://expressjs.com/) framework is built ontop of Node and `h
 
 The main structure of an express program is as follows:
 
-**File: [expressHelloWorld.js]()**
+**File: [expressHelloWorld.js](https://github.com/learn-co-curriculum/intro-to-express-js/blob/master/expressHelloWorld.js)**
 ```js
 const express = require('express')
 const app = express()
