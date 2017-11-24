@@ -11,6 +11,8 @@
 
 _A [video lecture](#video-lecture) covering this content is below the README_
 
+**To play with these examples, you have to `git clone git@github.com:learn-co-curriculum/using-ejs-in-express.git` into the Learn IDE or your environment. Then, `cd using-ejs-in-express` to work in the project folder. Run `npm install` too.**
+
 ## EJS Templates
 
 Even with Express' simplicity of request routing through handler functions, our handler functions can get pretty messy if we're sending back a full HTML document and the response.
@@ -348,5 +350,4 @@ Looping is a bit tricky but super important, so make sure to practice it.
 
 ## Resources 
 
-* [Templating with EJS](https://scotch.io/tutorials/use-ejs-to-template-your-node-application)
 * [Templating with EJS](https://scotch.io/tutorials/use-ejs-to-template-your-node-application)
