@@ -1,0 +1,16 @@
+{
+  "name": "using-ejs-in-express",
+  "version": "1.0.0",
+  "description": "## Objectives",
+  "main": "expressMessyHTML.js",
+  "dependencies": {
+    "ejs": "^2.5.7",
+    "express": "^4.16.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

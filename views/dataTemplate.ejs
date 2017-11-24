@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Let's Use EJS</title>
+  </head>
+  <body>
+    <h1><%= welcomeText %></h1>
+    <h2>My Favorite Things</h2>
+    <ul>
+      <% favoriteThings.forEach(function(thing){ %>
+        <li><%= thing %></li>
+      <% }) %>
+    </ul>
+  </body>
+</html>

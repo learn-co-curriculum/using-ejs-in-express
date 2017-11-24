@@ -1,126 +1,352 @@
-# Intro To Express.js
+# Using EJS Templates in Express
 
 ## Objectives
 
-1. Understand the Express DSL
-2. Learn a simple Express application structure
-3. Load your first Express application
-4. Build an express route.
-5. Send a response to an HTTP request using Express
+1. Understand what an EJS template is and how it generates HTML.
+2. Use `<%= %>` to embed the return value of a Javascript expression in HTML.
+3. Render an EJS template from an Express handler using `resp.render()`
+4. Pass data from an Express handler into EJS via `resp.render()`
+5. Use data from an Express handler in an EJS template with `<%= %>`.
+6. Iterate through an array in an EJS template using `<% %>` to generate HTML.
 
-## Javascript, Meet `HTTP` with Node
+_A [video lecture](#video-lecture) covering this content is below the README_
 
-Node introduced a module in the framework called `http`. This low-level module provides a way to turn a Javascript application into a web application. Instead of running a program and it exiting after the procedure terminates, a program that leverages `http` can create a server, an application that will stay on, listening for HTTP requests and providing http responses.
+## EJS Templates
 
-**File: [simpleNodeServer.js](https://github.com/learn-co-curriculum/intro-to-express-js/blob/master/simpleNodeServer.js)**
-```js
-const http = require('http');
+Even with Express' simplicity of request routing through handler functions, our handler functions can get pretty messy if we're sending back a full HTML document and the response.
 
-// Create a Server Object
-const server = http.createServer(function(req, resp){
-  console.log("HTTP request received!")
-
-  resp.write('Hello World!'); // Send a response to the client
-  resp.end(); // Close the HTTP connection
-
-  console.log("...continuing to listen...")
-})
-
-console.log("Starting Server on Port 3000")
-server.listen(3000) //the server object listens on port 3000
-```
-
-_Note: On the IDE these servers will work however for now you won't be able to find the IP address of the server._
-
-By requiring `http`, we get access to a class that can create instances of web servers (using `http.createServer()`) that can listen for TCP/IP connections that are valid `HTTP` requests and send valid `HTTP` responses. When we run our application, `node simpleNodeServer.js` and visit `http://localhost:3000` we would see `Hello World!` in our browser. Our terminal would log:
-
-```
-Starting Server on Port 3000
-HTTP request received!
-...continuing to listen...
-HTTP request received!
-...continuing to listen...
-```
-
-With that functionality we can build web applications as complex as Facebook, Airbnb, and everything.
-
-The `http` object from Node has a method, `createServer` that will return an instance of an HTTP server. The function you provide to `createServer` is known as a handler. Every HTTP request the server receives will be passed to that function as the first argument, generally named `req` for "Request". That handler function's job is to send the HTTP response, which is setup as the second argument, generally named `resp` (or `res`) for "Response". `req` and `resp` have methods on them that provide all the HTTP functionality needed for HTTP requests and responses. We use `resp.write` to send information back in the HTTP response and `resp.end()` to terminate the response and send it back to the client.
-
-The issue with the native Node `http` object is that the server can receive one function to handle all the HTTP requests that come in.
-
-If we wanted to support multiple URLs in our application and do different things for each request, we would have to build everything into that main function passed to `createServer`. It would get messy fast, lots of looking at the `req` and figuring out URLs and building an internal routing engine, sort of like a traffic cop saying "Oh, the person wants our "About Page" at `/about`, so call the `AboutPage()` function and pass the response. It'd look like this:
-
-**File: [nodeRouting.js](https://github.com/learn-co-curriculum/intro-to-express-js/blob/master/nodeRouting.js)**
-```js
-const http = require('http');
-
-// Create a Server Object
-const server = http.createServer(function(req, resp){
-  // req.url contains the URL of the Request
-  if (req.url.match("/about")){
-    AboutPage(resp)
-  } else if (req.url.match("/contact")){
-    ContactPage(resp)
-  } else {
-    HomePage(resp)
-  }
-  resp.end()
-})
-
-console.log("Starting Server on Port 3000")
-server.listen(3000) //the server object listens on port 3000
-
-function AboutPage(resp){
-  resp.write("The About Page")
-}
-
-function ContactPage(resp){
-  resp.write("The Contact Page")
-}
-
-function HomePage(resp){
-  resp.write("The Home Page")
-}
-```
-
-It's not the worst, but trust me, it would get ugly and unweildy very fast. The important thing to realize is that routing, the act of delegating a request based on a URL to a particular function to handle that request and send a response, is a key part of building a web application.
-
-## Enter Express.js
-
-The [Express.js](https://expressjs.com/) framework is built ontop of Node and `http` to make it easier to build web applications by supplying a [`Domain Specific Language (DSL)`](https://en.wikipedia.org/wiki/Domain-specific_language) ontop of Node `http`.
-
-The main structure of an express program is as follows:
-
-**File: [expressHelloWorld.js](https://github.com/learn-co-curriculum/intro-to-express-js/blob/master/expressHelloWorld.js)**
+**File: [expressMessyHTML.js]()**
 ```js
 const express = require('express')
 const app = express()
 
 app.get('/', function(req, resp){
-  resp.send('Hello World!')
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <title>Let's Use EJS</title>
+      </head>
+      <body>
+        <h1>Learning To Use EJS</h1>    
+      </body>
+    </html>
+  `
+
+  resp.send(html)
 })
 
 app.listen(3000)
 ```
 
-First we load `express` by `require`ing it (and really first, we added it to our project by using `npm add express`).
+Even with a relatively small HTML document, putting it directly in the handler function already looks messy. We have two languages in 1 function and if we needed to do anything dynamic or have 100 of lines of HTML, it would get worse, and fasts.
 
-We declare `app` to be an new instance of an express application using the `express()` constructor function.
+Instead of writing HTML within a handler, we use Express to render templates of HTML where we can embed Javascript to create dynamic HTML.
 
-This `app` instance has a variety of methods that make building complex web applications.
+## What's a Template?
 
-The first one we can see above is `.get()`. This, and the family of routing methods express provides, immediately solves our routing problem discussed with Node.
+A template is a document that contains the structure and content for the final output, but also contains sections that need to be interpreted and compiled in order to generate the final document. They are sort of like "Mail Merges".
 
-`.get()` takes two arguments, the first is the URL to match, the second is a handler function very similar to the one we saw in Node `http`. With this we can immediately route certain URLs based on HTTP verbs to specific functions. 
+A Hypothetical Template Example:
 
-The express handler functions also take 2 arguments, the first for the requests, `req`, the second for the response, `resp`.
+```
+Dear <FirstName>,
 
-Instead of simply calling `resp.write()`, express provides higher level response methods that we are going to learn about shortly, but for now, `resp.send()` will send the response back to the browser or client.
+Congratulations on your <Occassion>!
 
-Finally, we tell the `app` to listen to HTTP requests on port 3000.
+We send our love to:
 
-With that, we've begun building web applications with Javascript, Node, and Express.
+<For Each FamilyMemberName in FamilyMembers>
+  <FamilyMemberName>
+<End For Each>
+
+Mazal Tov!
+```
+
+In this hyptothetical template format, variables and logic are defined by being enclosed in `< >`. So `<FirstName>` isn't literally those sequence of characters, but rather represents a variable `FirstName` meant to be injected into the document. The section with some logic is:
+
+```
+<For Each FamilyMemberName in FamilyMembers>
+  <FamilyMemberName>
+<End For Each>
+```
+
+This would represent a loop, saying that there was a collection of `FamilyMembers` and for each one, print out the `FamilyMemberName`.
+
+Given the following data:
+
+```
+FirstName = "Avi"
+Occassion = "Graduation"
+FamilyMembers = ["Sarah", "Jonathan"]
+```
+
+The template would generate:
+
+```
+Dear Avi,
+
+Congratulations on your Graduation!
+
+We send our love to:
+
+Sarah
+Jonathan
+
+Mazal Tov!
+```
+
+If the data changed, so would the produced final content. Express supports many template libraries for generating HTML, [EJS](http://www.embeddedjs.com) and [Jade](http://jade-lang.com/) are popular ones, we're going to learn about EJS.
+
+## EJS Templates
+
+EJS templates are files that contain text, generally HTML, along with special "EJS" tags that allow for you to embed a Javascript expression whose evaluation (return value) will be added to the template when compiled.
+
+The two EJS tags you need to learn about are:
+
+* `<%= %>` - Used to output the return value of an expression into the document, e.g, `<%= 1+1 %>` will add `2` to the document.
+* `<% %>` - Used to evaluate an expression, but not add the return value to the document, e.g, `<% const name = "Avi"%>` defines a `name` variable, but does not add the return value of the expression (in this case, `undefined`), to the document.
+
+We'll be putting our EJS templates in `views` directory for all our Express applications. 
+
+**File: [views/firstEJSTemplate.ejs]()**
+```ejs
+<!doctype html>
+<html>
+  <head>
+    <title>Let's Use EJS</title>
+  </head>
+  <body>
+    <h1>Learning To Use EJS</h1>
+    <p>The time now is: <%= new Date() %></p>
+  </body>
+</html>
+```
+
+The goal of this template is to embed the current date and time each time the template is compiled. If we compiled it right now we'd get:
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <title>Let's Use EJS</title>
+  </head>
+  <body>
+    <h1>Learning To Use EJS</h1>
+    <p>The time now is: 2017-11-24T18:39:14.245Z</p>
+  </body>
+</html>
+```
+
+If we then compiled it again in 10 minutes, we'd get:
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <title>Let's Use EJS</title>
+  </head>
+  <body>
+    <h1>Learning To Use EJS</h1>
+    <p>The time now is: 2017-11-24T18:49:14.245Z</p>
+  </body>
+</html>
+```
+
+Everyime we compile the template, the line `<%= new Date() %>` would actually evaluate and return the current date and time. That's what makes EJS powerful, we can embed code and logic into our template to generate dynamic HTML.
+
+## Using EJS with Express
+
+To use EJS with Express, you have to add `ejs` to your node application with `npm add ejs`. Once the node application has `ejs` in the `package.json`, you have to then tell your express application that your template rendering engine is EJS and the location of your templates.
+
+**File: [expressWithEJS.js]()**
+```js
+const express = require('express')
+const app = express()
+const path = require('path');
+
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+app.get('/', function(req, resp){
+  resp.render('firstEJSTemplate')
+})
+
+app.listen(3000)
+```
+
+The lines at the top are how we configure the express application, `app`, to use EJS.
+
+```js
+const express = require('express')
+const app = express()
+const path = require('path');
+
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+```
+
+We use the `path` package to get the current directory path and join it with the `views` directory to create a full path to the views directory to use for this application - `app.set('views', path.join(__dirname, 'views'));`
+
+The next line, `app.set('view engine', 'ejs');` sets the application's view engine to `ejs`. With that we get access to a new function available on our response object passed to a route handler function: 
+
+```js
+app.get('/', function(req, resp){
+  resp.render('firstEJSTemplate')
+})
+```
+
+`resp.render('templateFile)` tells the response object to render (or compile) the template, `templateFile`, located in the `views` directory and send the generated document as the response to the HTTP request. Since our template is `views/firstEJSTemplate.ejs` we tell the response to `resp.render('firstEJSTemplate')`. 
+
+**Note: We leave out the file extension `.ejs` during the `render()` call. We also don't have to mention the `views` directory as we already told Express to always look inside views.**
+
+If we start this application with `node expressWithEJS.js` and loaded the site in our browser, we'd see:
+
+![Site with EJS](https://cl.ly/nv7A/Image%202017-11-24%20at%201.49.33%20PM.png)
+
+## Passing Data from a handler function to an EJS Template
+
+Generally the data we want to embed into our HTML is coming from Models or other data sources loaded during the event handler. Imagine:
+
+```js
+app.get('/', function(req, resp){
+  const welcomeText = "Welcome to EJS"
+  const favoriteThings = [
+    "NYC",
+    "Music",
+    "Code",
+    "Movies"
+  ]
+
+  resp.render('dataTemplate')
+})
+```
+
+In **[views/dataTemplate.ejs]()** we'd probably want to do something like:
+```ejs
+<!doctype html>
+<html>
+  <head>
+    <title>Let's Use EJS</title>
+  </head>
+  <body>
+    <h1><%= welcomeText %></h1>
+    <h2>My Favorite Things</h2>
+    <ul>
+      <% favoriteThings.forEach(function(thing){ %>
+        <li><%= thing %></li>
+      <% }) %>
+    </ul>
+  </body>
+</html>
+```
+
+In an effort to generate:
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <title>Let's Use EJS</title>
+  </head>
+  <body>
+    <h1>Welcome to EJS</h1>
+    <h2>My Favorite Things</h2>
+    <ul>
+      <li>NYC</li>
+      <li>Music</li>
+      <li>Code</li>
+      <li>Movies</li>
+    </ul>
+  </body>
+</html>
+```
+
+The handler function defined two variables, `welcomeText` and `favoriteThings`. The template should be able to access the data defined in the handler function in the form of local Javascript variables. To achieve this and have the variables defined in the handler function accessible in the view template, we must explicitly pass them in via the `resp.render()` function. `resp.render()` takes two arguments, the first the template file to render. The second argument is a javascript object whose keys become local variables in the view set to the key's value in the object.
+
+**File: [ejsWithData.js]()**
+```js
+const express = require('express')
+const app = express()
+const path = require('path');
+
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+app.get('/', function(req, resp){
+  const welcomeText = "Welcome to EJS"
+  const favoriteThings = [
+    "NYC"
+    "Music",
+    "Code",
+    "Movies"
+  ]
+  resp.render('dataTemplate', {
+    viewVariable: "I'm available in the view as 'viewVariable'"
+    welcomeText: welcomeText,
+    favoriteThings, favoriteThings
+  })
+})
+
+app.listen(3000)
+```
+
+We pass render a javascript object with three keys, `viewVariable`, `welcomeText`, and `favoriteThings`. Those keys' values, a String, a variable referencing a string, and a variable referencing an Array, become available in the view as local variables. 
+
+If you wrote `<%= viewVariable %>` in `dataTemplate.ejs`, our HTML would include: `"I'm available in the view as 'viewVariable'"`.
+
+You could imagine it being a little neater by seperating the creation of the object you're passing to the view as its own variable:
+
+```js
+app.get('/', function(req, resp){
+  const welcomeText = "Welcome to EJS"
+  const favoriteThings = [
+    "NYC"
+    "Music",
+    "Code",
+    "Movies"
+  ]
+  const viewData = {
+    viewVariable: "I'm available in the view as 'viewVariable'"
+    welcomeText: welcomeText,
+    favoriteThings, favoriteThings
+  }
+
+  resp.render('dataTemplate', viewData)
+})
+```
+
+That's how you pass data to the view.
+
+### Iterating Through Data in the View
+
+Let's look at one part of the view that's a bit more complex. 
+
+```ejs
+<ul>
+  <% favoriteThings.forEach(function(thing){ %>
+    <li><%= thing %></li>
+  <% }) %>
+</ul>
+```
+
+What we're doing here is creating an `li` for each element inside of `favoriteThings` array. 
+
+Since the first expression to achieve this is the loop construct, `forEach`, we don't use `<%= %>` but rather `<% %>`. We use `forEach` on the array to start a loop and enclose the entire opening in `<% %>` - `<% favoriteThings.forEach(function(thing){ %>`. 
+
+The template engine begins the loop and will include the next line, outside of any EJS tags, once for each element in the array, thereby adding 3 `li`s to our final HTML. Within that, we can still use EJS to include the value of each element through the argument we pass to the `forEach` callback function, named `thing` in this example. `<li><%= thing %></li>`. 
+
+Finally, we end the loop by closing the callback function and the `forEach`. `<% }) %>`
+
+Looping is a bit tricky but super important, so make sure to practice it.
+
+## Video Lecture
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/OovkL82Jnx8?rel=0&modestbranding=1" frameborder="0" allowfullscreen></iframe><p><a href="https://youtu.be/OovkL82Jnx8">Intro to Express</a></p>
+
+[Slides](https://docs.google.com/presentation/d/1cqqONyI0s3dnwzKmK34MMvQmh31mQrZ0mj7Pw_c-PBg/edit#slide=id.g242ae760d7_0_47)
 
 ## Resources 
 
-* [Hello World](https://expressjs.com/en/starter/hello-world.html)
+* [Templating with EJS](https://scotch.io/tutorials/use-ejs-to-template-your-node-application)
+* [Templating with EJS](https://scotch.io/tutorials/use-ejs-to-template-your-node-application)
