@@ -15,7 +15,7 @@ _A [video lecture](#video-lecture) covering this content is below the README_
 
 Even with Express' simplicity of request routing through handler functions, our handler functions can get pretty messy if we're sending back a full HTML document and the response.
 
-**File: [expressMessyHTML.js]()**
+**File: [expressMessyHTML.js](https://github.com/learn-co-curriculum/using-ejs-in-express/blob/master/expressMessyHTML.js)**
 ```js
 const express = require('express')
 const app = express()
@@ -109,7 +109,7 @@ The two EJS tags you need to learn about are:
 
 We'll be putting our EJS templates in `views` directory for all our Express applications. 
 
-**File: [views/firstEJSTemplate.ejs]()**
+**File: [views/firstEJSTemplate.ejs](https://github.com/learn-co-curriculum/using-ejs-in-express/blob/master/views/firstEJSTemplate.ejs)**
 ```ejs
 <!doctype html>
 <html>
@@ -159,7 +159,7 @@ Everyime we compile the template, the line `<%= new Date() %>` would actually ev
 
 To use EJS with Express, you have to add `ejs` to your node application with `npm add ejs`. Once the node application has `ejs` in the `package.json`, you have to then tell your express application that your template rendering engine is EJS and the location of your templates.
 
-**File: [expressWithEJS.js]()**
+**File: [expressWithEJS.js](https://github.com/learn-co-curriculum/using-ejs-in-express/blob/master/expressWithEJS.js)**
 ```js
 const express = require('express')
 const app = express()
@@ -222,7 +222,7 @@ app.get('/', function(req, resp){
 })
 ```
 
-In **[views/dataTemplate.ejs]()** we'd probably want to do something like:
+In **[views/dataTemplate.ejs](https://github.com/learn-co-curriculum/using-ejs-in-express/blob/master/views/dataTemplate.ejs)** we'd probably want to do something like:
 ```ejs
 <!doctype html>
 <html>
@@ -264,7 +264,7 @@ In an effort to generate:
 
 The handler function defined two variables, `welcomeText` and `favoriteThings`. The template should be able to access the data defined in the handler function in the form of local Javascript variables. To achieve this and have the variables defined in the handler function accessible in the view template, we must explicitly pass them in via the `resp.render()` function. `resp.render()` takes two arguments, the first the template file to render. The second argument is a javascript object whose keys become local variables in the view set to the key's value in the object.
 
-**File: [ejsWithData.js]()**
+**File: [ejsWithData.js](https://github.com/learn-co-curriculum/using-ejs-in-express/blob/master/ejsWithData.js)**
 ```js
 const express = require('express')
 const app = express()
